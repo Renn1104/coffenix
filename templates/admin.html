@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cofffenix Arabica - Admin SPPK Coffee Supplier</title>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Overlay for mobile -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">CF</div>
+                <div class="logo-text">Cofffenix Admin</div>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item active" data-target="panel-dashboard">
+                    <a><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                </li>
+                <li class="menu-item" data-target="panel-kriteria">
+                    <a><i data-lucide="list-checks"></i> Kelola Kriteria</a>
+                </li>
+                <li class="menu-item" data-target="panel-supplier">
+                    <a><i data-lucide="users"></i> Kelola Supplier</a>
+                </li>
+                <li class="menu-item" data-target="panel-dataset">
+                    <a><i data-lucide="database"></i> Dataset</a>
+                </li>
+                <li class="menu-item" data-target="panel-ranking">
+                    <a><i data-lucide="award"></i> Ranking</a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <p>SPPK AHP-TOPSIS v1.0</p>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <div class="main-wrapper">
+            <!-- Header -->
+            <header class="header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button class="hamburger-btn" id="btn-hamburger">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <div class="header-title" id="page-title">Dashboard SPPK</div>
+                </div>
+                <div class="header-actions">
+                    <span class="role-badge">Admin Mode</span>
+                </div>
+            </header>
+
+            <!-- Main Content Container -->
+            <main class="content-container" style="padding: 24px;">
+
+                <!-- 1. DASHBOARD PANEL -->
+                <section id="panel-dashboard" class="content-panel active">
+                    <div class="grid-container grid-cols-4">
+                        <div class="card-kpi">
+                            <div class="kpi-icon-wrapper"><i data-lucide="users"></i></div>
+                            <div class="kpi-details">
+                                <span class="kpi-title">Jumlah Supplier</span>
+                                <span class="kpi-value" id="kpi-suppliers-count">0</span>
+                            </div>
+                        </div>
+                        <div class="card-kpi">
+                            <div class="kpi-icon-wrapper warning"><i data-lucide="list-checks"></i></div>
+                            <div class="kpi-details">
+                                <span class="kpi-title">Jumlah Kriteria</span>
+                                <span class="kpi-value" id="kpi-criteria-count">0</span>
+                            </div>
+                        </div>
+                        <div class="card-kpi">
+                            <div class="kpi-icon-wrapper success"><i data-lucide="award"></i></div>
+                            <div class="kpi-details">
+                                <span class="kpi-title">Supplier Terbaik</span>
+                                <span class="kpi-value" id="kpi-best-supplier" style="font-size: 1.15rem; font-weight: 700; margin-top: 8px;">-</span>
+                            </div>
+                        </div>
+                        <div class="card-kpi">
+                            <div class="kpi-icon-wrapper danger" id="kpi-cr-color"><i data-lucide="percent"></i></div>
+                            <div class="kpi-details">
+                                <span class="kpi-title">Consistency Ratio</span>
+                                <span class="kpi-value" id="kpi-cr-value">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid-container grid-cols-3">
+                        <div class="card-dashboard" style="grid-column: span 2;">
+                            <div class="card-header">
+                                <div class="card-title">Skor Preferensi Supplier (TOPSIS)</div>
+                                <i data-lucide="bar-chart-3" class="text-muted"></i>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="chart-supplier-scores"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-dashboard">
+                            <div class="card-header">
+                                <div class="card-title">Bobot Kriteria (AHP)</div>
+                                <i data-lucide="pie-chart" class="text-muted"></i>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="height: 250px;">
+                                    <canvas id="chart-criteria-weights"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-dashboard">
+                        <div class="card-header">
+                            <div class="card-title">Aktivitas Terbaru</div>
+                            <i data-lucide="activity" class="text-muted"></i>
+                        </div>
+                        <div class="card-body">
+                            <ul class="activity-list" id="activity-log-container">
+                                <li class="activity-item">
+                                    <div class="activity-marker"></div>
+                                    <div class="activity-content">
+                                        <div class="activity-text">Sistem diinisialisasi dengan kriteria kopi default.</div>
+                                        <div class="activity-time">Baru saja</div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. KELOLA KRITERIA PANEL -->
+                <section id="panel-kriteria" class="content-panel">
+                    <div class="card-dashboard">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title" style="font-size: 1.15rem;">Daftar Kriteria</h2>
+                                <p class="card-subtitle">Kelola bobot dan jenis kriteria SPPK</p>
+                            </div>
+                            <button class="btn btn-primary" id="btn-add-kriteria">
+                                <i data-lucide="plus"></i> Tambah Kriteria
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-wrapper">
+                                <table class="table-modern" id="table-kriteria">
+                                    <thead>
+                                        <tr>
+                                            <th>Kode</th>
+                                            <th>Nama Kriteria</th>
+                                            <th>Tipe</th>
+                                            <th>Bobot (AHP)</th>
+                                            <th style="width: 150px; text-align: center;">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="kriteria-list-body">
+                                        <!-- CRITERIA INJECTED VIA JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pairwise Matrix AHP -->
+                    <div class="card-dashboard">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title" style="font-size: 1.15rem;">Pairwise Comparison Matrix (AHP)</h2>
+                                <p class="card-subtitle">Bandingkan kepentingan relatif antar kriteria (Skala Saaty 1-9)</p>
+                            </div>
+                            <div id="ahp-badge-container">
+                                <!-- Badge konsistensi di sini -->
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="ahp-warning-box"></div>
+                            
+                            <!-- Tab or Selector to swap between Matrix Input vs Slider Input -->
+                            <div style="display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                                <button class="btn btn-primary" id="btn-ahp-view-sliders" style="font-size: 0.8rem; padding: 6px 12px;">
+                                    <i data-lucide="sliders"></i> Bandingkan dengan Slider
+                                </button>
+                                <button class="btn btn-secondary" id="btn-ahp-view-matrix" style="font-size: 0.8rem; padding: 6px 12px;">
+                                    <i data-lucide="grid"></i> Bandingkan dengan Matriks
+                                </button>
+                            </div>
+
+                            <!-- Sliders Layout -->
+                            <div id="ahp-sliders-view" class="ahp-comparison-panel">
+                                <!-- Sliders generated here -->
+                            </div>
+
+                            <!-- Grid Matrix Layout -->
+                            <div id="ahp-matrix-view" style="display: none; overflow-x: auto; margin-bottom: 24px;">
+                                <div class="ahp-matrix-grid" id="matrix-grid-container">
+                                    <!-- Matrix grid cells generated here -->
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+                                <button class="btn btn-secondary" id="btn-reset-ahp"><i data-lucide="rotate-ccw"></i> Reset Matriks</button>
+                                <button class="btn btn-primary" id="btn-calculate-ahp"><i data-lucide="calculator"></i> Hitung Bobot AHP</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AHP Calculation Results (Hidden until calculated) -->
+                    <div id="ahp-results-section" style="display: none;" class="grid-container grid-cols-2">
+                        <div class="card-dashboard">
+                            <div class="card-header">
+                                <div class="card-title">Matriks Normalisasi AHP</div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-wrapper">
+                                    <table class="table-modern" id="table-ahp-normalization">
+                                        <!-- Normalized Matrix -->
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-dashboard">
+                            <div class="card-header">
+                                <div class="card-title">Priority Vector & Parameter Konsistensi</div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-wrapper" style="margin-bottom: 20px;">
+                                    <table class="table-modern">
+                                        <thead>
+                                            <tr>
+                                                <th>Kriteria</th>
+                                                <th>Priority Vector (Bobot)</th>
+                                                <th>Weighted Row Sum</th>
+                                                <th>Consistency Measure</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ahp-vector-body">
+                                            <!-- Generated details -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div style="background-color: var(--muted-light); padding: 16px; border-radius: var(--radius-md);">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; font-weight: 600;">
+                                        <span>Lamda Maksimum (λmax):</span>
+                                        <span id="ahp-val-lambda">-</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; font-weight: 600;">
+                                        <span>Consistency Index (CI):</span>
+                                        <span id="ahp-val-ci">-</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600;">
+                                        <span>Consistency Ratio (CR):</span>
+                                        <span id="ahp-val-cr">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. KELOLA SUPPLIER PANEL -->
+                <section id="panel-supplier" class="content-panel">
+                    <div class="card-dashboard">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title" style="font-size: 1.15rem;">Daftar Supplier</h2>
+                                <p class="card-subtitle">Lihat dan ubah data supplier kopi yang terdaftar</p>
+                            </div>
+                            <button class="btn btn-primary" id="btn-add-supplier">
+                                <i data-lucide="plus"></i> Tambah Supplier
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <!-- Filters Bar -->
+                            <div class="filters-bar">
+                                <div class="search-wrapper">
+                                    <i data-lucide="search" class="search-icon" style="width: 18px; height: 18px;"></i>
+                                    <input type="text" id="search-supplier" class="form-input" placeholder="Cari supplier...">
+                                </div>
+                                <div style="display: flex; gap: 12px;">
+                                    <select id="filter-score-range" class="form-select" style="width: 180px;">
+                                        <option value="all">Semua Supplier</option>
+                                        <option value="has-data">Sudah Input Kriteria</option>
+                                        <option value="no-data">Belum Input Kriteria</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="table-wrapper">
+                                <table class="table-modern" id="table-suppliers">
+                                    <thead>
+                                        <tr>
+                                            <th>Alternatif</th>
+                                            <th>Nama Supplier</th>
+                                            <th>Aroma</th>
+                                            <th>Flavor</th>
+                                            <th>Aftertaste</th>
+                                            <th>Acidity</th>
+                                            <th>Body</th>
+                                            <th>Balance</th>
+                                            <th style="width: 150px; text-align: center;">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="supplier-list-body">
+                                        <!-- Injected via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Pagination -->
+                            <div class="pagination">
+                                <div class="pagination-info" id="pagination-info">Menampilkan 0-0 dari 0 Supplier</div>
+                                <div class="pagination-buttons">
+                                    <button class="btn btn-secondary" id="btn-pagination-prev" disabled>Sebelumnya</button>
+                                    <button class="btn btn-secondary" id="btn-pagination-next" disabled>Berikutnya</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. DATASET PANEL -->
+                <section id="panel-dataset" class="content-panel">
+                    <div class="card-dashboard">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title" style="font-size: 1.15rem;">Decision Matrix (Dataset)</h2>
+                                <p class="card-subtitle">Dataset rating supplier lengkap untuk perhitungan TOPSIS</p>
+                            </div>
+                            <button class="btn btn-secondary" id="btn-download-dataset">
+                                <i data-lucide="download"></i> Download CSV
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-wrapper">
+                                <table class="table-modern" id="table-dataset">
+                                    <thead>
+                                        <tr id="dataset-header-row">
+                                            <!-- Headers loaded dynamically -->
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dataset-body-rows">
+                                        <!-- Rows loaded dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. RANKING PANEL -->
+                <section id="panel-ranking" class="content-panel">
+                    <div class="card-dashboard" style="background-color: var(--primary-light); border-color: var(--primary-border);">
+                        <div class="card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                            <div>
+                                <h3 style="color: var(--primary); font-weight: 700; font-size: 1.2rem; margin-bottom: 4px;">Perhitungan AHP-TOPSIS</h3>
+                                <p style="color: var(--muted); font-size: 0.9rem;">Analisis perangkingan supplier kopi berdasarkan bobot AHP dan data matriks keputusan.</p>
+                            </div>
+                            <button class="btn btn-primary" id="btn-run-topsis" style="padding: 12px 24px; font-size: 1rem; box-shadow: var(--shadow-md);">
+                                <i data-lucide="play"></i> Hitung AHP-TOPSIS
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Ranking Output section (Hidden initially) -->
+                    <div id="topsis-results-container" style="display: none;">
+                        
+                        <!-- Top 3 Leaderboard -->
+                        <div class="card-dashboard">
+                            <div class="card-header">
+                                <div class="card-title">Podium Top 3 Supplier Terbaik</div>
+                                <i data-lucide="trophy" style="color: #fbbf24;"></i>
+                            </div>
+                            <div class="card-body">
+                                <div class="podium-container" id="leaderboard-podium">
+                                    <!-- Injected via JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Final Rankings & Scores -->
+                        <div class="grid-container grid-cols-3">
+                            <div class="card-dashboard" style="grid-column: span 2;">
+                                <div class="card-header">
+                                    <div class="card-title">Tabel Hasil Perangkingan TOPSIS</div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-wrapper">
+                                        <table class="table-modern" id="table-topsis-rankings">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 80px; text-align: center;">Peringkat</th>
+                                                    <th>Supplier</th>
+                                                    <th>Alternatif</th>
+                                                    <th>Skor Preferensi (Vi)</th>
+                                                    <th style="width: 150px; text-align: center;">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="topsis-rank-body">
+                                                <!-- Rankings injected -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card-dashboard">
+                                <div class="card-header">
+                                    <div class="card-title">Peringkat Visual</div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container" style="height: 300px;">
+                                        <canvas id="chart-topsis-scores"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detailed Math Calculations Accordion -->
+                        <div class="card-dashboard">
+                            <div class="card-header" style="cursor: pointer;" onclick="document.getElementById('topsis-steps-body').style.display = document.getElementById('topsis-steps-body').style.display === 'none' ? 'block' : 'none'">
+                                <div>
+                                    <h2 class="card-title">Detail Langkah Perhitungan TOPSIS</h2>
+                                    <p class="card-subtitle">Klik untuk melihat rincian matriks normalisasi, bobot, ideal, dan separasi</p>
+                                </div>
+                                <i data-lucide="chevron-down" class="text-muted"></i>
+                            </div>
+                            <div class="card-body" id="topsis-steps-body" style="display: none; border-top: 1px solid var(--border);">
+                                
+                                <!-- Step 1: Decision Matrix -->
+                                <div class="step-math-card">
+                                    <div class="step-math-header">
+                                        <span class="badge badge-primary">1</span> Matriks Keputusan (D)
+                                    </div>
+                                    <div class="step-math-body">
+                                        <table class="table-modern" id="math-step-decision"></table>
+                                    </div>
+                                </div>
+
+                                <!-- Step 2: Normalization -->
+                                <div class="step-math-card">
+                                    <div class="step-math-header">
+                                        <span class="badge badge-primary">2</span> Normalisasi Matriks (R)
+                                    </div>
+                                    <div class="step-math-body">
+                                        <div class="math-formula">R_ij = X_ij / sqrt(sum(X_kj^2))</div>
+                                        <table class="table-modern" id="math-step-normalization"></table>
+                                    </div>
+                                </div>
+
+                                <!-- Step 3: Weighted Normalization -->
+                                <div class="step-math-card">
+                                    <div class="step-math-header">
+                                        <span class="badge badge-primary">3</span> Matriks Ternormalisasi Terbobot (Y)
+                                    </div>
+                                    <div class="step-math-body">
+                                        <div class="math-formula">Y_ij = R_ij * W_j</div>
+                                        <table class="table-modern" id="math-step-weighted"></table>
+                                    </div>
+                                </div>
+
+                                <!-- Step 4 & 5: Ideal Positive & Negative -->
+                                <div class="step-math-card">
+                                    <div class="step-math-header">
+                                        <span class="badge badge-primary">4 & 5</span> Solusi Ideal Positif (A+) & Negatif (A-)
+                                    </div>
+                                    <div class="step-math-body">
+                                        <table class="table-modern">
+                                            <thead>
+                                                <tr>
+                                                    <th>Solusi Ideal</th>
+                                                    <th class="math-ideal-headers">Kriteria...</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="math-step-ideals">
+                                                <!-- Ideal values -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Step 6 & 7: Separation measures -->
+                                <div class="step-math-card">
+                                    <div class="step-math-header">
+                                        <span class="badge badge-primary">6 & 7</span> Jarak Ideal Positif (D+) & Negatif (D-)
+                                    </div>
+                                    <div class="step-math-body">
+                                        <div class="math-formula">D+_i = sqrt(sum((Y_ij - A+_j)^2)) | D-_i = sqrt(sum((Y_ij - A-_j)^2))</div>
+                                        <table class="table-modern">
+                                            <thead>
+                                                <tr>
+                                                    <th>Supplier</th>
+                                                    <th>Alternatif</th>
+                                                    <th>Separation Positive (D+)</th>
+                                                    <th>Separation Negative (D-)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="math-step-separation">
+                                                <!-- D+ and D- values -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Calculation History -->
+                        <div class="card-dashboard">
+                            <div class="card-header">
+                                <div class="card-title">Riwayat Perhitungan SPPK</div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-wrapper">
+                                    <table class="table-modern">
+                                        <thead>
+                                            <tr>
+                                                <th>Tanggal & Waktu</th>
+                                                <th>Status AHP (CR)</th>
+                                                <th>Supplier Terbaik</th>
+                                                <th>Nilai Preferensi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="history-rank-body">
+                                            <!-- history records -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Modal Kriteria (Add/Edit) -->
+    <div class="modal-overlay" id="modal-kriteria">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-kriteria-title">Tambah Kriteria</div>
+                <button class="modal-close" onclick="closeModal('modal-kriteria')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-kriteria">
+                    <input type="hidden" id="criteria-index">
+                    <div class="form-group">
+                        <label class="form-label">Kode Kriteria</label>
+                        <input type="text" id="criteria-code" class="form-input" placeholder="Contoh: C1, C2" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nama Kriteria</label>
+                        <input type="text" id="criteria-name" class="form-input" placeholder="Nama kriteria" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tipe Kriteria</label>
+                        <select id="criteria-type" class="form-select">
+                            <option value="benefit">Benefit</option>
+                            <option value="cost">Cost</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-kriteria')">Batal</button>
+                <button class="btn btn-primary" id="btn-save-kriteria">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Supplier (Add/Edit) -->
+    <div class="modal-overlay" id="modal-supplier">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-supplier-title">Tambah Supplier</div>
+                <button class="modal-close" onclick="closeModal('modal-supplier')">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <form id="form-supplier">
+                    <input type="hidden" id="supplier-id">
+                    <div class="form-group">
+                        <label class="form-label">Nama Supplier</label>
+                        <input type="text" id="supplier-name" class="form-input" placeholder="Nama Supplier" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Kode Alternatif</label>
+                        <input type="text" id="supplier-alt" class="form-input" placeholder="Contoh: ALT-01" required>
+                    </div>
+                    
+                    <!-- Criterion fields will be dynamically generated based on criteria -->
+                    <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+                        <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 12px; color: var(--muted);">Nilai Kriteria (Skala 1 - 100)</h4>
+                        <div id="supplier-criteria-inputs-container">
+                            <!-- Injected fields -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-supplier')">Batal</button>
+                <button class="btn btn-primary" id="btn-save-supplier">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus -->
+    <div class="modal-overlay" id="modal-confirm">
+        <div class="modal-container" style="max-width: 400px;">
+            <div class="modal-header">
+                <div class="modal-title">Konfirmasi Hapus</div>
+                <button class="modal-close" onclick="closeModal('modal-confirm')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message" style="font-size: 0.95rem; color: var(--foreground);">Apakah Anda yakin ingin menghapus data ini?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-confirm')">Batal</button>
+                <button class="btn btn-danger" id="btn-confirm-yes">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core App JS -->
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>
